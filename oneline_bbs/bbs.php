@@ -1,5 +1,4 @@
 <?php 
-
 // データベースに接続
 $link = mysqli_connect('localhost', 'root', 'pc19930831A', 'oneline_bbs') or 
 die('データベースに接続できません：' . mysqli_error($link));
@@ -13,16 +12,16 @@ $errors = array();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // 名前が正しく入力されているかチェック
     $name = null; // 初期化
-    if (!isset($_POST['name']) || !strlen($_POST['name'])) { // 名前が入力されていなかったら
+    if (!isset($_POST['name']) || !strlen($_POST['name'])) {
         $errors['name'] = '名前を入力してください';
-    } else if (strlen($_POST['name']) > 40) { // 入力された名前の文字数が40字より大きかったら
+    } else if (strlen($_POST['name']) > 40) { 
         $errors['name'] = '名前は40文字以内で入力してください';
-    } else { // 入力された名前を$nameへ格納
-        $name = $_POST;
+    } else { 
+        $name = $_POST['name'];
     }
 
     // ひとことが正しく入力されているかチェック
-    $comment = null; // 初期化
+    $comment = null; 
     if (!isset($_POST['comment']) || !strlen($_POST['comment'])) {
         $errors['comment'] = 'ひとことを入力してください';
     } else if (strlen($_POST['comment']) > 200) {
@@ -50,53 +49,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         header('Location: http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
     }
 }
-?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-"http:/wwww.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-<html>
-<head>
-    <title>ひとこと掲示板</title>
-</head>
-<body>
-    <h1>ひとこと掲示板</h1>
-    
-    <form action="bbs.php" method="post">
-        <?php if (count($errors)): ?>
-        <ul class="error_list">
-            <?php foreach ($errors as $error): ?>
-            <li>
-                <?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?>
-            </li>
-            <?php endforeach; ?>
-        </ul>
-        <?php endif; ?>
-        名前：<input type="text" name="name" /><br />
-        ひとこと：<input type="text" name="comment" size="60" /><br />
-        <input type="submit" name="submit" value="送信" />
-    </form>
 
-    <?php 
-    // 投稿された内容を取得するSQL文を作成して結果を取得
-    $sql = "select * from post order by created desc";
-    $result = mysqli_query($link, $sql);
-    ?>
-    
-    <?php if ($result !== false && mysqli_num_rows($result)): ?>
-    <ul>
-        <?php while ($post = mysqli_fetch_assoc($result)): ?>
-        <li>
-            <?php echo htmlspecialchars($post['name'], ENT_QUOTES, 'UTF-8'); ?> 
-            <?php echo htmlspecialchars($post['comment'], ENT_QUOTES, 'UTF-8'); ?>
-        </li>
-        <?php endwhile; ?>
-    </ul>
-    <?php endif; ?>
+// 投稿された内容を取得するSQL文を作成して結果を取得
+$sql = "select * from post order by created desc";
+$result = mysqli_query($link, $sql);
 
-    <?php 
-    // 取得結果を解放して接続を閉じる
-    mysqli_free_result($result);
-    mysqli_close($link);
-    ?>
-</body>
-</html>
+// 取得した結果を$postsに格納
+$posts = array();
+if ($result !== false && mysqli_num_rows($result)) {
+    while ($post = mysqli_fetch_assoc($result)) {
+        $posts[] = $post;
+    }
+}
+
+// 取得結果を解放して接続を閉じる
+mysqli_free_result($result);
+mysqli_close($link);
+
+include 'views/bbs_view.php';
+
 
