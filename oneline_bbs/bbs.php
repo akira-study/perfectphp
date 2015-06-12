@@ -2,7 +2,7 @@
 
 // データベースに接続
 $link = mysqli_connect('localhost', 'root', 'pc19930831A', 'oneline_bbs') or 
-die('データベースに接続できません：' . mysql_error());
+die('データベースに接続できません：' . mysqli_error($link));
 
 // データベースを選択する
 mysqli_select_db($link, 'oneline_bbs');
@@ -38,12 +38,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 (name, comment, created) 
                 values
                 (
-                 '" . mysql_real_escape_string($name) . "',
-                 '" . mysql_real_escape_string($comment) . "',
+                 '" . mysqli_real_escape_string($link, $name) . "',
+                 '" . mysqli_real_escape_string($link, $comment) . "',
                  '" . date('Y-m-d H:i:s') . "'
                 )";
         // 保存する
         mysqli_query($link, $sql);
+
+        mysqli_close($link);
+
+        header('Location: http://' . $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI']);
     }
 }
 ?>
@@ -57,10 +61,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h1>ひとこと掲示板</h1>
     
     <form action="bbs.php" method="post">
+        <?php if (count($errors)): ?>
+        <ul class="error_list">
+            <?php foreach ($errors as $error): ?>
+            <li>
+                <?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?>
+            </li>
+            <?php endforeach; ?>
+        </ul>
+        <?php endif; ?>
         名前：<input type="text" name="name" /><br />
         ひとこと：<input type="text" name="comment" size="60" /><br />
         <input type="submit" name="submit" value="送信" />
     </form>
+
+    <?php 
+    // 投稿された内容を取得するSQL文を作成して結果を取得
+    $sql = "select * from post order by created desc";
+    $result = mysqli_query($link, $sql);
+    ?>
+    
+    <?php if ($result !== false && mysqli_num_rows($result)): ?>
+    <ul>
+        <?php while ($post = mysqli_fetch_assoc($result)): ?>
+        <li>
+            <?php echo htmlspecialchars($post['name'], ENT_QUOTES, 'UTF-8'); ?> 
+            <?php echo htmlspecialchars($post['comment'], ENT_QUOTES, 'UTF-8'); ?>
+        </li>
+        <?php endwhile; ?>
+    </ul>
+    <?php endif; ?>
+
+    <?php 
+    // 取得結果を解放して接続を閉じる
+    mysqli_free_result($result);
+    mysqli_close($link);
+    ?>
 </body>
 </html>
 
